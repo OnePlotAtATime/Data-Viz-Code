@@ -1,0 +1,88 @@
+library(dplyr)
+library(ggplot2)
+library(scales)
+library(showtext)
+library(ggtext)
+library(png)
+library(magick)
+library(grid)
+library(gridtext)
+
+fake_data <-read.csv("fake_data.csv")
+fake_data$sales = as.numeric(gsub("[\\$,]", "", fake_data$Sales..Volume))
+
+font_add("Helvetica Neue", "HelveticaNeue.ttf")
+font_add("Lush Regular", regular = "Lush.ttf")
+font_add("Arial", regular = "Arial.ttf", bold = "ARLRDBD.ttf")
+
+font_families()
+showtext_auto()
+
+img <- image_read('lushlogo2.png')
+img2 <- image_fill(img, refcolor = "#F6F6F6", color = "Transparent", fuzz = 60, point = "+1+1")
+
+text1 <- "<span style='font-size:11pt; font-family:Arial; color:#eef0eb'><span style='color:#00A259'>**TOP THREE ACCOUNTS = $1M** </span> <br>
+                          Because of our sales initiative in the <br>
+                          second half of the year, these <br>
+                          accounts cited our product line as their <br>
+                          reason for continuing to do business <br>
+                          with us. <span style='color:#00A259'>**Keep up the good work!**</span>
+</span>"
+
+text2 <- "<span style='font-size:11pt; font-family:Arial; color:#eef0eb'>**OPPORTUNITY:** Accounts G-J say <br>
+                          our <span style='color:#F8E62C'>**customer service is still lacking**</span>, <br>
+                          leading to lower than expected sales <br>
+                          accounts cited our product line as their <br>
+                          <span style='color:#F8E62C'>What are next steps? </span>
+</span>"
+
+p <- ggplot(fake_data, aes(x = Account, y = sales, fill = Account))+
+  geom_bar(stat = "Identity", width = 0.7) + 
+  scale_fill_manual(values = c("#00A259", "#1CAA54", "#37B14F", "#95a3a0", "#95a3a0",
+                               "#95a3a0", "#F8E62C", "#F8E62C", "#F8E62C", "#F8E62C")) + 
+  scale_y_continuous(labels = scales::dollar_format(scale = 0.001, suffix = "K"),
+                     breaks = seq(0, 600000, by = 100000),
+                     limits = c(0, 600000)) +
+  labs(title = "SALES VOLUME BY ACCOUNT",
+       subtitle = "Top 10 accounts - 4-week sales ending January 31",
+       caption = "DISCLAIMER: fake data for illustrative branding exercise for the #SWDchallenge") +
+  xlab("ACCOUNT")+
+  theme_minimal() + theme(
+    plot.title = element_text(family = "Lush Regular", face = "bold", size = 25, color = "#eef0eb"),
+    plot.subtitle = element_text(family = "Arial", size = 12, color = "#95a3a0"),
+    plot.caption = element_text(family = "Arial", size = 12, color = "#95a3a0", hjust = 0, vjust = -1),
+    legend.position = "none",
+    axis.text.x = element_text(family = "Arial", size = 15, color = "#eef0eb"),
+    axis.title = element_text(family = "Lush Regular", size = 15, color = "#eef0eb"),
+    axis.ticks.y = element_line(color = "#95a3a0"),
+    axis.line.y = element_line(color = "#95a3a0"),
+    panel.grid.major = element_blank(), 
+    panel.grid.minor = element_blank(),
+    plot.background = element_rect(fill = "#111b24"),
+    plot.margin = margin(1, 1, 1, 1, "cm")
+  ) + 
+  geom_text(data = top3_label, aes(label = c("$547K", "$294K", "$190K")), 
+            vjust = 1.75, 
+            size = 5, family = "Arial", fontface = "bold", color = "#eef0eb") +
+  annotation_custom(richtext_grob(text1,
+                                  hjust = 0,
+                                  vjust = 0.5), 
+                    xmin = -7.5, ymin = 300000) + 
+  annotation_custom(richtext_grob(text2,
+                                  hjust = 0,
+                                  vjust = 1.25), 
+                    xmin = 6, ymin = 10000)
+
+plot_grob <- ggplotGrob(p)
+img_grob <- grid::rasterGrob(img2, x = 0.9, y = 0.85, 
+                         width = unit(1.5, 'inches'))
+
+g <- gtable::gtable_add_grob(
+  plot_grob, img_grob, t = 1, l = 1, b = dim(plot_grob)[1], r = dim(plot_grob)[2]
+)
+
+plot <- ggplot() +
+  annotation_custom(g) +
+  theme_void()
+  
+ggsave(plot, filename = "swdchallenge_apr2022_lush.pdf", dpi = 300)
