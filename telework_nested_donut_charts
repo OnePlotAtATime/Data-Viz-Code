@@ -1,0 +1,56 @@
+library(dplyr)
+library(ggplot2)
+library(geomtextpath)
+library(showtext)
+library(MetBrewer)
+
+ggplot(productivity, aes(x = sex, y = percentage, fill = category))+
+  geom_col(width = 0.6) + 
+  coord_polar(theta = "y")+
+  scale_x_discrete(limits = c(" ", "Men","Women")) +
+  scale_fill_met_d("Cross", direction = -1)+
+  labs(title = "PRODUCTIVITY DURING TELEWORK",
+       subtitle = "Both men and women report similar productivity during telework.
+Most report that they accomplish about the same amount of work 
+or more during telework compared to working outside of home.",
+       caption = "Data source: Statistics Canada 2021
+Created by: Anastasia Stuart-Edwards (@OnePlotAtATime)")+
+  theme_void() + 
+  theme(legend.position = "right",
+        legend.title = element_blank(),
+        legend.text = element_text(size = 10),
+        plot.title = element_text(hjust = 0.5, size = 15, color = "#004E64", face = "bold"),
+        plot.subtitle = element_text(hjust = 0.5, size = 12, color = "grey50"),
+        plot.caption = element_text(hjust = 0.5, vjust = 0, color = "grey50", size = 10),
+        panel.background = element_rect(color = "white", fill = "white"),
+        plot.background = element_rect(color = "white", fill = "white"),
+        plot.margin = margin(c(t = 10, r = 0, b = 10, l = 0)), 
+        text = element_text("Helvetica Neue"))+
+  geom_textpath(position = position_stack(vjust = 0.5), angle = 90, aes(label = paste0(percentage, "%")), color = "white", size = 4.5, fontface = "bold") +
+  geom_textpath(angle = 90, aes(label = sexlabel), vjust = 2.2, hjust = 1, size = 5, color = "#004E64", fontface = "bold")
+  ggsave(filename = "tele_productivity.pdf")
+
+ggplot(preference, aes(x = sex, y = percentage, fill = category))+
+    geom_col(width = 0.6) + 
+    coord_polar(theta = "y")+
+    scale_x_discrete(limits = c(" ", "Men","Women")) +
+    scale_fill_met_d("Cross", direction = -1)+
+    labs(title = "PREFERENCE FOR TELEWORK",
+         subtitle = "Both men and women report similar preferences for telework.
+Most prefer to work half or most hours at home.",
+         caption = "Data source: Statistics Canada 2021
+Created by: Anastasia Stuart-Edwards (@OnePlotAtATime)")+
+    theme_void() + 
+    theme(legend.position = "right",
+          legend.title = element_blank(),
+          legend.text = element_text(size = 10),
+          plot.title = element_text(hjust = 0.5, size = 15, color = "#004E64", face = "bold"),
+          plot.subtitle = element_text(hjust = 0.5, size = 12, color = "grey50"),
+          plot.caption = element_text(hjust = 0.5, vjust = 0, color = "grey50", size = 10),
+          panel.background = element_rect(color = "white", fill = "white"),
+          plot.background = element_rect(color = "white", fill = "white"),
+          plot.margin = margin(c(t = 10, r = 0, b = 10, l = 0)), 
+          text = element_text("Helvetica Neue"))+
+    geom_textpath(position = position_stack(vjust = 0.5), angle = 90, aes(label = paste0(percentage, "%")), color = "white", size = 4.5, fontface = "bold") +
+    geom_textpath(angle = 90, aes(label = sexlabel), vjust = 2.2, hjust = 0, size = 5, color = "#004E64", fontface = "bold")
+  ggsave(filename = "tele_preference.pdf") 
