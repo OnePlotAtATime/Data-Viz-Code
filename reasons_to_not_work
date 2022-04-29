@@ -1,0 +1,33 @@
+library(dplyr)
+library(ggplot2)
+library(showtext)
+library(MetBrewer)
+
+ggplot(reasons, aes(x = sex, y = percentage, group = desc(category2), fill = category2))+
+  geom_bar(position = "stack", stat = "identity") + 
+  coord_flip() +
+  scale_fill_met_d("Cross") + 
+  labs(title = "REASONS FOR NOT WORKING",
+       subtitle = "There is a great variability in reasons for not working between different demographic categories.
+For women with children, care for children and economic reasosn are the primary reasons, while for 
+men with children the two leading causes are economic reasons and personal health. These numbers are also 
+contrasted against women and men of all ages whose primary reasons for not working is retirement.",
+       caption = "Data source: Gallup 2021 | Created by: Anastasia Stuart-Edwards (@OnePlotAtATime)")+
+  theme_minimal()+
+  theme(legend.position = "right",
+        legend.title = element_blank(),
+        legend.text = element_text(size = 12),
+        panel.background = element_rect(color = "white", fill = "white"),
+        panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+        plot.background = element_rect(color = "white", fill = "white"),
+        axis.title=element_blank(),
+        axis.text.y=element_text(size = 12, color = "black"),
+        axis.text.x = element_blank(),
+        plot.title = element_text(hjust = 0.5, size = 15, color = "#004E64", face = "bold"),
+        plot.subtitle = element_text(hjust = 0.5, size = 12, color = "grey50"),
+        plot.caption = element_text(hjust = 0.5, vjust = -1, color = "grey50", size = 10),
+        plot.margin = margin(c(t = 10, r = 15, b = 10, l = 10)), 
+        text = element_text("Helvetica Neue"))+
+  geom_text(aes(label = ifelse(percentage > 5, paste0(percentage, "%"), "")), 
+            position = position_stack(vjust = 0.5), color = "white", size = 4.5, fontface = "bold")
+ggsave(filename = "reasons_to_not_work.pdf")
