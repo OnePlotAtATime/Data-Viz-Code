@@ -1,0 +1,146 @@
+library(dplyr)
+library(rstatix)
+library(tidyr)
+library(ggplot2)
+library(showtext)
+library(Cairo)
+
+#Data import and preparation
+#Data can be downloaded from: https://www.europeansocialsurvey.org/data/
+data <- read.csv("ESS1-9e01_1.csv")
+
+data <- data%>%
+  dplyr::filter(happy < 11)%>%
+  dplyr::filter(gndr < 3)
+
+agg <- data%>%
+  group_by(essround, cntry)%>%
+  get_summary_stats(happy, type="mean")
+
+agg_wide <- agg %>%
+  select(cntry, essround, mean)%>%
+  pivot_wider(names_from = essround, values_from = mean)
+
+agg_wide$perc = round(((agg_wide[,10] - agg_wide[,5])/agg_wide[,10])*100, 1)
+
+lollipop <- agg_wide%>%
+  filter(perc != "NA")%>%
+  arrange(desc(perc))%>%
+  mutate(
+    cntry = as.factor(recode(cntry, "AT"="Austria",
+                   "BE"="Belgium",
+                   "BG"="Bulgaria",
+                   "CH"="Switzerland",
+                   "CY"="Cyprus",
+                   "CZ"="Czechia",
+                   "DE"="Germany",
+                   "DK"="Denmark",
+                   "EE"="Estonia",
+                   "ES"="Spain",
+                   "FI"="Finland",
+                   "FR"="France",
+                   "GB"="United Kingdom",
+                   "GR"="Greece",
+                   "HR"="Croatia",
+                   "HU"="Hungary",
+                   "IE"="Ireland",
+                   "IL"="Israel",
+                   "IS"="Iceland",
+                   "IT"="Italy",
+                   "LT"="Lithuania",
+                   "LU"="Luxembourg",
+                   "LV"="Latvia",
+                   "NL"="Netherlands",
+                   "NO"="Norway",
+                   "PL"="Poland",
+                   "PT"="Portugal",
+                   "RU"="Russia",
+                   "SE"="Sweden",
+                   "SI"="Slovenia",
+                   "SK"="Slovakia",
+                   "TR"="Turkey",
+                   "UA"="Ukraine")),
+    direction = as.factor(
+      ifelse(perc >= 1.5, "up", 
+             ifelse(perc <= -1.5, "down", "null"))),
+    adjust = ifelse(perc > 0, -0.5, 1.5)
+    )
+lollipop[16,13] <- -0.2
+
+lollipop <- lollipop%>%
+  dplyr::select(cntry, direction, perc, adjust)
+
+lollipop$perc <- unlist(lollipop$perc)
+
+lollipop
+
+#Prepare plotting elements
+  #Summary stats
+  agg_wide %>%
+    filter(change2 != "NA")%>%
+    select("9")%>%
+    get_summary_stats(., type="mean_sd")
+
+  #Text for annotation
+  text1 <- "  These countries reported an increase 
+  in happiness from 2008 to 2018"
+  
+  text2 <- "  These countries reported almost 
+  no change from 2008 to 2018"
+  
+  text3 <- "Cyprus reported a small decline in happiness"
+  
+  text4 <- "  All countries in the sample reported 
+  relatively high happiness score.
+  
+  The mean happiness score across 
+  countries in 2018 was 7.5 out of 
+  a maximum of 10 and 
+  standard deviation of 0.62."
+  
+  #Font imports
+  font_add_google("Barlow", "Barlow-Regular.ttf", bold = "Barlow-Bold.ttf")
+  showtext_auto()
+
+#Display plot in a Cairo window
+CairoWin()
+
+#Create a plot
+ggplot(lollipop, aes(y = reorder(cntry, perc), x = perc, color = direction)) +
+  geom_segment(aes(y=reorder(cntry, perc), yend=reorder(cntry, perc), x=0, xend=perc),
+               size = 1.2)+
+  geom_point(size = 12) +
+  theme_light() +
+  theme(
+    legend.position = "none",
+    panel.grid.major = element_blank(),
+    panel.border = element_blank(),
+    axis.ticks.y = element_blank(),
+    axis.text.y = element_blank(),
+    plot.title = element_text(size = 20, margin = margin(b = 20), hjust = 0.5),
+    plot.caption = element_text(size = 10, margin = margin(t = 5), color = "#808080", hjust = 0.12),
+    plot.margin = margin(c(20, 20, 20, 20)),
+    text = element_text("Barlow")
+  ) +
+  scale_x_discrete(expand = expansion(mult = 0.1))+
+  scale_color_manual(values = c("#F8766D", "grey","#00BA38"))+
+  xlab("") +
+  ylab("") + 
+  labs(title = "Changes in Happiness From 2008 to 2018 by Country", 
+       caption= "Data source: European Social Survey | Created by Anastasia Stuart-Edwards (@OnePlotAtATime)") +
+  geom_text(aes(label=paste0(perc, "%")), color = "white", size = 3, fontface = "bold")+ 
+  geom_text(aes(label=cntry, 
+                hjust = adjust), 
+            color = "black", size = 4, fontface = "bold")+
+  geom_vline(xintercept = 0) + 
+  annotate("text", x = 7, y = 15, label = text1,
+           hjust = "left", size = 4, color = "#00BA38", fontface = "bold")+ 
+  annotate("text", x = 2, y = 4, label = text2,
+           hjust = "left", size = 4, color = "#808080", fontface = "bold")+ 
+  annotate("text", x = 0.5, y = 1, label = text3,
+           hjust = "left", size = 4, color = "#F8766D", fontface = "bold")+ 
+  annotate("text", x = -2.8, y = 12, label = text4,
+           hjust = "left", size = 4, color = "#808080")
+
+#Save the plot
+ggsave(filename = "ess_happy_change_2008_to_2018.pdf", device = cairo_pdf)
