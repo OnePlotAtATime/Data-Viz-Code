@@ -1,0 +1,60 @@
+#Download data from: https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=2410005001&pickMembers%5B0%5D=1.1&cubeTimeFrame.startMonth=01&cubeTimeFrame.startYear=2012&cubeTimeFrame.endMonth=05&cubeTimeFrame.endYear=2022&referencePeriods=20120101%2C20220501
+
+#Load libraries
+library(dplyr)
+library(ggplot2)
+library(haven)
+library(lubridate)
+library(MetBrewer)
+
+#Prepare data for visualization
+tourists_in_canada <-read.csv("24100050.csv")
+tourists_in_canada$REF_DATE<-tourists_in_canada$ï..REF_DATE
+tourists_in_canada$REF_DATE <- as.POSIXct(tourists_in_canada$REF_DATE, format = "%Y-%M")
+tourists_in_canada$Year <- format(tourists_in_canada$REF_DATE, format="%Y")
+tourists_in_canada$Month <- format(tourists_in_canada$REF_DATE, format="%M")
+
+tourists_in_canada_by_province <- tourists_in_canada%>%
+  select(Year, Month, Country.of.residence, VALUE, GEO)%>%
+  filter(Country.of.residence == c("United States of America residents entering Canada",
+                                   "Americas, countries other than the United States of America",
+                                   "Europe", "Africa", "Asia", "Oceania"),
+                                   Year >= 1991, Year != 2022,
+         GEO != "Canada",
+         GEO != "Northwest Territories" )%>% #no data recorded for his territory
+  mutate(Year = as.numeric(Year)) %>% 
+  group_by(GEO, Month)%>%
+  summarise(n = sum(VALUE))%>%
+  mutate(percentage = round((n / sum(n))*100, 1),
+         Month = as.numeric(Month))
+
+#Visualize
+ggplot(tourists_in_canada_by_province, aes(x = Month, y = percentage, fill = GEO)) +
+  geom_area(alpha=0.7, size=0.25, colour="black") + 
+  scale_x_continuous(breaks = c(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12), limits = c(1, 12),
+                     labels = c("1" = "January", "2" = "February", "3" = "March",
+                                "4" = "April", "5" = "May", "6" = "June",
+                                "7" = "July", "8" = "August", "9" = "September",
+                                "10" = "October", "11" = "November", "12" = "December"))+
+  scale_fill_met_d(name = "Renoir", limits = c(0,100)) + 
+  ylab("Percentage of Tourist Visits") +
+  labs(title = "What Months are Popular Among Tourists to Canada?",
+       subtitle = "Overall, summer months are most popular (no surprise here). June is busiest in Alberta and Nova Scotia, July in New Brunswick, 
+Saskatchewan, Prince Edward Island, and Yukon; August in Quebec as well as Newfoundland and Labrador. Winter months are less popular overall, 
+although there is a small spike in December in many provinces (ho-ho-ho!). Data from 1991-2021.
+
+       Where and when would you like to visit?",
+       caption= "Data source: Statistics Canada | Created by Anastasia Stuart-Edwards (@OnePlotAtATime)",
+       fill = "Country of Tourists' Residence")+
+  theme_minimal() + 
+  theme(plot.background = element_rect(color = "white", fill = "white"),
+        panel.grid.minor = element_blank(),
+        axis.text.x = element_text(angle = 90),
+        axis.title.x = element_blank(),
+        text = element_text("sans"),
+        legend.position = "none",
+        plot.title = element_text(size = 15, hjust = 0.5, face = "bold"),
+        plot.caption = element_text(size = 10, margin = margin(t = 10), color = "grey50", hjust = 0),
+        plot.subtitle = element_text(color="grey50", hjust = 0.5),
+        plot.margin = margin(c(20, 20, 20, 40))) +
+facet_wrap(~GEO, ncol = 3)
