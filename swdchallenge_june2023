@@ -1,0 +1,93 @@
+#Plot 1
+font_add_google(name = "Lato", family = "Lato", regular.wt = 400, bold.wt = 700)
+showtext_auto()
+
+relaxing_long.v1%>%
+  filter(Year=="2022")%>%
+  mutate(Hours = as.numeric(Hours))%>%
+  ggplot(aes(x = reorder(Activity, Hours), y=Hours, group = Group, fill = Group)) +
+  geom_col(position = "dodge2") +
+  coord_flip()+
+  theme_minimal() + 
+  theme(plot.background = element_rect(fill = "#e4e8e5"),
+        panel.grid = element_line(color = "#bdc7be"),
+        legend.position = "none",
+        axis.title.y = element_blank(),
+        axis.text.y = element_text(size = 15, hjust = 0.5),
+        axis.title.x= element_text(size = 15, vjust = -1.5),
+        axis.text.x= element_text(size = 12),
+        plot.title = element_text(size = 20, hjust = 0.5),
+        plot.margin = margin(c(30, 30, 30, 30)),
+        text = element_text(color = "#383b39", family = "Lato")) + 
+  scale_fill_manual(values = (c("#efbd30", "#1b6a57")))+
+  scale_y_continuous(limits=c(0, 3.1), breaks = c(0, 0.5, 1, 1.5, 2, 2.5, 3))+
+  labs(title = "2022", y = "Hours Per Day")
+
+relaxing_long.v1%>%
+  filter(Year=="2003")%>%
+  mutate(Hours = as.numeric(Hours))%>%
+  ggplot(aes(x = reorder(Activity, Hours), y=Hours, group = Group, fill = Group)) +
+  geom_col(position = "dodge2") +
+  coord_flip()+
+  scale_y_reverse(breaks = c(0, 0.5, 1, 1.5, 2, 2.5, 3))+
+  theme_minimal() + 
+  theme(plot.background = element_rect(fill = "#e4e8e5"),
+        panel.grid = element_line(color = "#bdc7be"),
+        legend.position = "none",
+        axis.title.y = element_blank(),
+        axis.text.y = element_text(size = 15),
+        axis.title.x= element_text(size = 15, vjust = -1.5),
+        axis.text.x= element_text(size = 12),
+        plot.title = element_text(size = 20, hjust = 0.5),
+        plot.margin = margin(c(30, 30, 30, 30)),
+        text = element_text(color = "#383b39", family = "Lato")) + 
+  scale_fill_manual(values = (c("#efbd30", "#1b6a57")))+
+  labs(title = "2003", y = "Hours Per Day")
+
+#Plot 2
+font_add_google(name = "Cabin", family = "Cabin", regular.wt = 400, bold.wt = 700)
+showtext_auto()
+
+relaxing_long.v1%>%
+  filter(Year=="2022")%>%
+  mutate(Hours = as.numeric(Hours))%>%
+  ggplot(aes(x = reorder(Activity, Hours), y=Hours, group = Group, fill = Group)) +
+  geom_col(position = "dodge2") +
+  coord_flip()+
+  theme_minimal() + 
+  theme(plot.background = element_rect(fill = "#e4e8e5"),
+        panel.grid = element_line(color = "#bdc7be"),
+        legend.position = "none",
+        axis.title.y = element_blank(),
+        axis.text.y = element_text(size = 15, hjust = 0.5),
+        axis.title.x= element_text(size = 15, vjust = -1.5),
+        axis.text.x= element_text(size = 12),
+        plot.title = element_text(size = 20, hjust = 0.5),
+        plot.margin = margin(c(30, 30, 30, 30)),
+        text = element_text(color = "#383b39", family = "Cabin")) + 
+  scale_fill_manual(values = (c("#efbd30", "#1b6a57")))+
+  scale_y_continuous(limits=c(0, 3.1), breaks = c(0, 0.5, 1, 1.5, 2, 2.5, 3))+
+  labs(title = "2022", y = "Hours Per Day")
+
+relaxing_long.v1%>%
+  filter(Year=="2003")%>%
+  mutate(Hours = as.numeric(Hours))%>%
+  ggplot(aes(x = reorder(Activity, Hours), y=Hours, group = Group, fill = Group)) +
+  geom_col(position = "dodge2") +
+  coord_flip()+
+  scale_y_reverse(breaks = c(0, 0.5, 1, 1.5, 2, 2.5, 3))+
+  theme_minimal() + 
+  theme(plot.background = element_rect(fill = "#e4e8e5"),
+        panel.grid = element_line(color = "#bdc7be"),
+        legend.position = "none",
+        axis.title.y = element_blank(),
+        axis.text.y = element_text(size = 15),
+        axis.title.x= element_text(size = 15, vjust = -1.5),
+        axis.text.x= element_text(size = 12),
+        plot.title = element_text(size = 20, hjust = 0.5),
+        plot.margin = margin(c(30, 30, 30, 30)),
+        text = element_text(color = "#383b39", family = "Cabin")) + 
+  scale_fill_manual(values = (c("#efbd30", "#1b6a57")))+
+  labs(title = "2003", y = "Hours Per Day")
+
+#the rest of the plot of finished in Canva
