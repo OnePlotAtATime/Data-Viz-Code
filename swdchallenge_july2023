@@ -1,0 +1,33 @@
+library(tidyverse)
+library(MetBrewer)
+library(showtext)
+
+font_add_google("Barlow", "Barlow-Regular.ttf", bold = "Barlow-Bold.ttf")
+showtext_auto()
+
+airquality%>%
+  mutate(Month2 = recode(Month, "5" = "May", "6" = "June", "7" = "July", "8" = "August", 
+                         "9" = "September"),
+         Month2 = factor(Month2, levels=c("May", "June", "July", "August", "September")))%>%
+  ggplot(aes(x=Ozone, y=Temp, size=Wind, color=Month2)) +
+  geom_point(alpha=0.5)+
+  scale_size(range = c(.1, 15))+ 
+  theme_minimal() + 
+  theme(plot.background = element_rect(fill = "white"),
+        plot.margin = margin(c(20, 20, 20, 20)),
+        text = element_text(family = "Barlow"),
+        plot.caption = element_text(hjust = 0, size = 12, color = "grey50", vjust = -0.8),
+        plot.title = element_text(size = 18),
+        plot.subtitle = element_text(size = 12, color = "grey30"),
+        legend.text = element_text(size = 10))+
+  scale_color_manual(values=met.brewer("Archambault", 5), name = "Month")+
+  scale_y_continuous(limits = c(50, 100)) + 
+  labs(title = "New York Air Quality Measurements (May to September 1973)",
+       subtitle = "Higher levels of ozone readings co-occur with higher temperatures. 
+Higher wind is associated with lower ozone readings and temperatures.
+Temperatures and ozone readings are lowest in May and September and are highest between June and August.",
+       caption = "Created by: Anastasia Stuart-Edwards | Tools: Rstudio, ggplot2 | Data source: 'airquality' dataset",
+       y = "Temperature (degrees F)",
+       x = "Ozone (parts per billion)")+
+  guides(size=guide_legend("Wind (miles per hour)"),
+         color = guide_legend(override.aes = list(size = 7)))
