@@ -1,0 +1,57 @@
+library(ggplot2)
+library(dplyr)
+library(tidyr)
+library(readxl)
+library(sysfonts)
+library(ragg)
+library(ggalluvial)
+
+font_add_google("Barlow", "Barlow-Regular.ttf", bold = "Barlow-Bold.ttf")
+showtext_auto()
+
+data <- read_excel("Commencing students.xlsx")
+
+data2021 <- data%>%
+  pivot_longer(
+    cols = c(
+      "Natural and Physical Sciences",
+      "Information Technology",
+      "Engineering and Related Technologies",
+      "Architecture and Building",
+      "Agriculture Environmental and Related Studies",
+      "Health",
+      "Education",
+      "Management and Commerce",
+      "Society and Culture",
+      "Creative Arts",
+      "Food Hospitality and Personal Services"
+    ),
+    names_to = "Discipline",
+    values_to = "Enrollment" )%>%
+  filter(Year==2021,
+         Gender=="Male"|Gender=="Female")
+
+ggplot(data = data2021,
+       aes(axis1 = Gender, axis2 = reorder(Discipline, Enrollment), axis3 = Institution,
+           y = Enrollment)) +
+  geom_alluvium(aes(fill = Gender, width = 1/1.5)) +
+  geom_stratum(width = 1/1.5, alpha=0.25) +
+  geom_text(stat = "stratum",
+            aes(label = after_stat(stratum)), size = 6, color = "white", fontface = "bold") +
+  scale_x_discrete(limits = c("Gender", "Discipline", "Institution"),
+                   expand = c(0.05, 0.05)) +
+  guides(fill = "none") +
+  theme_void() +
+  theme(legend.position = "none", 
+        plot.title = element_text(size = 30, margin = margin(t = 1), vjust = -6, hjust = 0.5, color = "white", face = "bold"),
+        plot.subtitle = element_text(size = 30, margin = margin(t = 1), color = "white", hjust = 0.5, vjust = -7,),
+        plot.caption = element_text(size = 20, color = "white", hjust = 0, vjust = 10),
+        plot.background = element_rect(fill = "grey30"),
+        text = element_text(color = "white", family = "Barlow"),
+        plot.margin = margin(c(5, 50, 5, 50)))+
+  labs(title = "Commencements for domestic undergraduate students for Australian Universities for 2021", 
+       subtitle = "Stratified by gender, field of study, and university",
+       caption= "Data source: Diversity In Data, Jul/Aug 2023 | Created by Anastasia Stuart-Edwards")
+
+ggsave('myplot.png', device = ragg::agg_png, 
+       width = unit(20, 'in'), height = unit(30, 'in'))
