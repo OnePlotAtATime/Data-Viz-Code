@@ -1,0 +1,54 @@
+#data is from Statistics Canada. Table 11-10-0240-01  Distribution of employment income of individuals by sex and work activity, Canada, provinces and selected census metropolitan areas
+#DOI: https://doi.org/10.25318/1110024001-eng
+
+data <- read.csv("income.csv")
+
+colnames(data)[1] ="Year"
+colnames(data)[2] ="Location"
+colnames(data)[5] ="Employment_Type"
+colnames(data)[colnames(data) == "VALUE"] ="Income"
+
+data<- data %>%
+  select(Year, Location, Income, Employment_Type, Sex)%>%
+  filter(Location %in% c("Canada", "Newfoundland and Labrador", "Prince Edward Island", "Nova Scotia", 
+                               "New Brunswick", "Ontario", "Quebec", "Manitoba",
+                               "Saskatchewan", "Alberta", "British Columbia"))%>%
+  filter(Year==2012|Year==2021)%>%
+  filter(Sex %in% c("Males", "Females"),
+         Year %in% c(2012, 2021))
+
+spread_data <- spread(data, Sex, Income)%>%
+  mutate(Gender_Pay_Gap = round((1-(Females/Males)) * 100, 1))%>%
+  select(-Females, -Males)%>%
+  spread(key = Year, value = Gender_Pay_Gap)
+
+final_data <- spread_data %>%
+  mutate(Gender_Pay_Gap_Change = `2021` - `2012`)
+
+ggplot(final_data,aes(x=reorder(Location, Gender_Pay_Gap_Change),fill=Gender_Pay_Gap_Change,y=Gender_Pay_Gap_Change))+
+  geom_bar(stat='identity',width=0.5,show.legend = FALSE)+
+  coord_flip()+
+  geom_hline(yintercept = 0, color = 1, lwd = 0.2) +
+  geom_text(aes(label = paste0(round(Gender_Pay_Gap_Change, 2), "%"), 
+            vjust = 0.5,
+            hjust = ifelse(Gender_Pay_Gap_Change < 0, 1.1, -0.1)))+
+  theme_minimal() +
+  scale_fill_gradient2(low = "lightblue", high = "darkred", midpoint=0) +
+  ylim(min(final_data$Gender_Pay_Gap_Change) - 5, 15)+
+  facet_wrap(~Employment_Type)+
+  labs(title="Gender Pay Gap Change From 2012 to 2021 by Canadian Province and Employment Type",
+       subtitle = "In the past decade, progress in closing the gender pay gap across Canada's geographical areas and among different types of workers has been uneven. 
+While the gap has narrowed substantially for full-year full-time workers in most provinces, it has widened for other employment types, such as part-time workers. 
+Notably, the Labor Force Survey (2022) indicates that women participate in part-time work at higher rates than men.
+This factor is crucial in understanding the nuances of the observed pay disparity.",
+       caption = "Data source: Statistics Canada, Canadian Income Survey | Created by Anastasia Stuart-Edwards using ggplot2
+Note: Gender pay gap is calculated using reported average employment income and is uncorrected")+
+  theme(plot.background = element_rect(fill = "white"),
+        axis.ticks.y = element_blank(), # Remove Y-axis ticks
+        axis.title = element_blank(),
+        axis.text.x = element_blank(),
+        panel.grid.major.y = element_blank(),
+        plot.title = element_text(size = 14, margin = margin(b = 10), hjust = 0.5,  face = "bold"),
+        plot.caption = element_text(size = 10, margin = margin(t = 15), hjust = 0.5, color="grey50"),
+        plot.subtitle = element_text(size = 10, margin = margin(b = 10), hjust = 0.5, color="grey50"),
+        plot.margin = margin(c(20, 20, 20, 40)))
