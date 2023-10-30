@@ -1,0 +1,58 @@
+# Load required packages
+install.packages("tidyverse")
+install.packages("ggplot2")
+install.packages("showtext")
+
+library(tidyverse)
+library(ggplot2)
+library(showtext)
+
+# Create the dataset
+df <- data.frame(
+  Year = c(rep(2023, 5), rep(2021, 5), rep(2022, 5), rep(2020, 5), rep(2019, 5), rep(2018, 5), rep(2017, 5), rep(2016, 5), rep(2015, 5)),
+  Rank = rep(1:5, 9),
+  Costume = c('Barbie', 'Princess', 'Spider-Man', 'Witch', 'Fairy', 'Witch', 'Rabbit', 'Dinosaur', 'Spider-Man', 'Cruella De Vil',
+              'Witch', 'Spider-Man', 'Dinosaur', 'Stranger Things', 'Fairy', 'Witch', 'Dinosaur', 'Harley Quinn', 'Rabbit', 'Clown',
+              'IT', 'Witch', 'Spider-Man', 'Dinosaur', 'Descendants', 'Fortnite', 'Spider-Man', 'Unicorn', 'Dinosaur', 'Witch',
+              'Wonder Woman', 'Harley Quinn', 'Clown', 'Unicorn', 'Rabbit', 'Harley Quinn', 'Joker', 'Superhero', 'Pirate', 'Wonder Woman',
+              'Harley Quinn', 'Star Wars', 'Superhero', 'Pirate', 'Batman')
+)
+
+# Sum ranks for each costume and sort them
+sum_ranks <- df %>%
+  group_by(Costume) %>%
+  summarise(Sum_Ranks = sum(Rank)) %>%
+  arrange(Sum_Ranks) %>%
+  mutate(Costume = factor(Costume, levels = rev(Costume)))  # Flip the order
+
+#Create a fill color palette
+fillcolors<- c("#EC8C17", "#DB8551", "#CA7D8B", "#B976C5", "#A86EFF")
+
+# Import Google Font
+font_add_google("Creepster", "creepster")
+font_add_google("Roboto", "roboto")
+showtext_auto()
+
+# Create the heatmap
+p<-ggplot(df, aes(x = Year, y = Costume)) +
+  geom_tile(aes(fill = Rank), colour = "white") +
+  scale_fill_gradientn(colours = fillcolors) +
+  geom_text(aes(label = sprintf("%d", Rank)), vjust = 0.5, color="white", fontface="bold", family = "roboto") +
+  scale_y_discrete(limits = rev(levels(sum_ranks$Costume))) +  # Set the flipped order based on sum of ranks
+  scale_x_continuous(breaks = c(2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023))+
+  theme_minimal() +
+  labs(title = "Halloween Costume Rankings Over the Years",
+       x = "Year",
+       y = "Costume",
+       caption = "Data source: Google Trends Freightgeist US
+Created by Anastasia Stuart-Edwards using ggplot2 with assistance of ChatGPT-4")+
+  theme(plot.title = element_text(family = "creepster", size = 30, margin = margin(b = 10), hjust=0.5),
+        legend.position = "none",
+        axis.text=element_text(family = "roboto", size = 12, color="white"),
+        axis.title = element_text(family = "roboto", size = 14),
+        plot.caption = element_text(size = 10, margin = margin(t = 15), hjust = 0.5, color="grey60"),
+        text = element_text(color = "white"),
+        panel.grid.major = element_blank(),
+        plot.background = element_rect(fill = "#111b24"),
+        plot.margin = margin(1, 1, 1, 1, "cm"))
+
