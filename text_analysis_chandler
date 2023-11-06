@@ -1,0 +1,124 @@
+#Install packages
+install.packages("tidyverse")
+install.packages("lubridate")
+install.packages("tidytext")
+install.packages("readxl")
+install.packages("textdata")
+install.packages("showtext")
+
+# Load necessary libraries
+library(tidyverse)
+library(lubridate)
+library(tidytext)
+library(readxl)
+library(textdata)
+library(showtext)
+
+#Import data
+df <- read_excel("friends_transcript.xlsx")
+
+#Load fonts
+font_add_google("Gloria Hallelujah", "gloria")
+font_add_google("Roboto", "roboto")
+showtext_auto()
+
+# Clean the text data
+df <- df %>%
+  mutate(text = tolower(Lines)) %>% # convert to lower case
+  mutate(text = str_replace_all(Lines, "[^[:alnum:]\\s]", "")) # remove punctuation
+
+# Tokenize the words
+word_tokens <- df %>%
+  unnest_tokens(word, text)
+
+# Count the number of words in each season
+word_counts <- word_tokens %>%
+  group_by(Season) %>%
+  summarise(number_of_words = n())
+
+# Get the sentiment lexicon
+nrc <- get_sentiments("nrc")
+
+# Join the tokenized words with the NRC lexicon
+word_sentiments <- word_tokens %>%
+  inner_join(nrc, by = "word", relationship = "many-to-many")
+
+# Calculate sentiment/emotion scores by season
+sentiment_scores_by_season <- word_sentiments %>%
+  group_by(Season, sentiment) %>%
+  summarise(count = n(), .groups = 'drop') # count the number of words associated with each sentiment/emotion per season
+
+#I decided to only work with positive/negative for this data visualization, so I'll filter for those
+sentiment_pos_neg <- sentiment_scores_by_season%>%
+  filter(sentiment == "positive" | sentiment == "negative")
+
+#Add episode names and order then in the order of seasons
+words_counts_with_names <- merge(word_counts, df, by = "Season")
+sentiments_with_names <- merge(sentiment_pos_neg, df, by = "Season")
+
+sentiments_with_names <- sentiments_with_names %>%
+  rename("episode_name" = "Episode name")
+words_counts_with_names<- words_counts_with_names %>%
+  rename("episode_name" = "Episode name")
+
+words_counts_with_names$episode_name <- factor(words_counts_with_names$episode_name, 
+                                               levels = words_counts_with_names$episode_name)
+levels(words_counts_with_names$episode_name)
+
+#Create plot settings
+friends_colors_pos_neg <- c("#BA2A22","#7E7EA0")
+scale_factor <- 0.10
+dodge_width <- 0.9
+
+ggplot() +
+  geom_line(data = words_counts_with_names, aes(x = episode_name, y = number_of_words, group = 1), color = "#DB9200") +
+  geom_point(data = words_counts_with_names, aes(x = episode_name, y = number_of_words), color = "#DB9200", size = 2) +
+  geom_bar(data = sentiments_with_names, 
+           aes(x = episode_name, 
+               y = count / scale_factor, fill = sentiment), 
+           stat = "identity", position = position_dodge2(dodge_width, preserve = "single"), alpha = 0.8) +
+  scale_y_continuous(
+    name = "Word Count",
+    sec.axis = sec_axis(~ . * scale_factor, name = "Sentiment Count") # Adjust scale_factor as needed
+  ) +
+  scale_fill_manual(values = friends_colors_pos_neg)+
+  theme_minimal() +
+  labs(fill = "Sentiment",
+    title = "Word Count and Sentiment Scores of Chandler's Lines 
+    in the First Episode of Every Season of 'Friends' TV Show",
+    subtitle = "Chandler's dialogue has notably expanded from the first to the last season of 'Friends.' 
+His contributions are predominantly positive, yet there's a discernible uptick in negative sentiments during
+significant episodes involving Ross, such as S2E1 'The One With Ross's New Girlfriend' and S5E1 'The One After Ross Says Rachel.'
+It seems that Chandler's not the only one side-eyeing Ross's moves; many of us can see where he's coming from.",
+    caption = "Created by Anastasia Stuart-Edwards using ggplot2 with assistance of ChatGPT-4 | Sentiment analysis is conducted using NRC Dictionary"
+  ) + 
+  theme(text = element_text(family = "roboto"),
+        plot.title = element_text(family = "gloria", size = 35, margin = margin(b = 10), hjust=0.5),
+        plot.subtitle = element_text(size = 18, color = "#4A4A6D", hjust = 0.5),
+        axis.title.x = element_blank(),
+        axis.title.y.left =  element_text(size = 15, margin = margin(r = 15)),
+        axis.title.y.right = element_text(size = 15, margin = margin(l = 15)),
+        axis.text.x = element_text(angle = 90, hjust = 1, size = 18),
+        axis.text.y = element_text(size = 12),
+        plot.caption = element_text(size = 12, margin = margin(t = 15), hjust = 0.5, color="grey60"),
+        legend.position = "bottom",
+        legend.title = element_text(size = 12),
+        legend.text = element_text(size = 12),
+        plot.background = element_rect(fill = "white"),
+        plot.margin = margin(1, 1, 1, 1, "cm"))+
+  geom_text(data = words_counts_with_names, aes(x = episode_name, y = number_of_words, label = number_of_words), 
+            vjust = c(1.75, 1.75, -1, 1.75, -1, 1.75, -1, 1.75, 1.75, 1.75), # Adjust vertical position of labels
+            hjust = 0.5,  # Center the text horizontally
+            color = "black",
+            size = 5) +
+  geom_text(data = sentiments_with_names,
+            aes(x = episode_name, 
+                y = count / scale_factor, 
+                label = count), 
+            position = position_dodge2(dodge_width, preserve = "single"),  # Adjust position to align with the bars
+            vjust = 1.5,  # Adjust to position the text above the bars
+            color = "black",  # Set text color
+            size = 5)
+
+
+
